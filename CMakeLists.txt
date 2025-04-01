@@ -4,5 +4,6 @@ project(GoLogicDLL)
 set(CMAKE_CXX_STANDARD 11)
 
 add_executable(GoLogicDLL main.cpp
-        GoLogic.cpp
-        GoLogic.h)
+        src/headers/go_logic.h
+        src/sources/go_logic.cpp
+        src/sources/set_stone_logic.cpp)
