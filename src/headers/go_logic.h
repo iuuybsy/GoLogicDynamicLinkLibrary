@@ -44,7 +44,8 @@ namespace go_logic {
         bool is_black_turn;
 
     public:
-        GoLogic(): board_info(std::string(BOARD_LENGTH * BOARD_LENGTH, '0')),
+        GoLogic(): board_info(std::string(BOARD_LENGTH * BOARD_LENGTH,
+                                          status_to_char_dict.at(OccupyStatus::Free)),
             is_black_turn(true) {}
         ~GoLogic() = default;
         void print_board_info();
@@ -54,7 +55,8 @@ namespace go_logic {
         static std::pair<int, int> list_to_grid(int ind);
         static bool is_valid_cord(int x, int y);
         bool is_occupied_by_stone(int x, int y) const;
-        int get_local_liberty(int x, int y) const;
+        int get_local_liberty(int x, int y, const std::string& cur_board) const;
+        void remove_stones(int x, int y);
     };
 }
 
