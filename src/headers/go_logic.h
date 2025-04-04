@@ -7,55 +7,29 @@
 
 namespace go_logic {
     const int BOARD_LENGTH = 19;
-    const std::vector<std::vector<int>> SEARCH_DIRECTIONS {
-            {0, 1},
-            {0, -1},
-            {1, 0},
-            {-1, 0},
-    };
+    const int SEARCH_DIRECTIONS[][2] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
 
-    enum class OccupyStatus {
-        Free,
-        Black,
-        White,
-    };
+    const char FREE = '.';
+    const char BLACK = 'X';
+    const char WHITE = 'O';
 
-    const std::unordered_map<OccupyStatus, char> status_to_char_dict {
-            {OccupyStatus::Free, '0'},
-            {OccupyStatus::Black, '1'},
-            {OccupyStatus::White, '2'},
-    };
-
-    const std::unordered_map<char, OccupyStatus> char_to_status_dict {
-            {'0', OccupyStatus::Free,},
-            {'1', OccupyStatus::Black},
-            {'2', OccupyStatus::White},
-    };
-
-    const std::unordered_map<char, char> char_to_char_dict {
-            {'0', '.',},
-            {'1', 'X'},
-            {'2', 'O'},
-    };
 
     class GoLogic {
     private:
-        std::string board_info;
+        std::vector<std::string> board_info;
         bool is_black_turn;
 
     public:
-        GoLogic(): board_info(std::string(BOARD_LENGTH * BOARD_LENGTH,
-                                          status_to_char_dict.at(OccupyStatus::Free)),
-            is_black_turn(true) {}
+        GoLogic(): board_info(std::vector<std::string>(BOARD_LENGTH, std::string(BOARD_LENGTH, FREE))),
+                is_black_turn(true) {}
         ~GoLogic() = default;
-        void print_board_info();
+        void print_board_info() noexcept;
+        void set_stone(int x, int y);
 
     private:
-        static int grid_to_list(int x, int y);
-        static std::pair<int, int> list_to_grid(int ind);
-        static bool is_valid_cord(int x, int y);
+        static bool is_valid_cord(int x, int y) noexcept;
         bool is_occupied_by_stone(int x, int y) const;
-        int get_local_liberty(int x, int y, const std::string& cur_board) const;
+        int get_local_liberty(int x, int y, const std::vector<std::string>& cur_board) const;
         void remove_stones(int x, int y);
     };
 }

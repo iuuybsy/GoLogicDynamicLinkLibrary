@@ -1,9 +1,10 @@
 #include "../headers/go_logic.h"
 
 #include <stack>
+#include <iostream>
 
 namespace go_logic {
-    int GoLogic::get_local_liberty(int x, int y, const std::string& cur_board) const {
+    int GoLogic::get_local_liberty(int x, int y, const std::vector<std::string>& cur_board) const {
         if (!is_valid_cord(x, y)) {
             std::string err_msg = "Invalid cord: (" + std::to_string(x) + ", " +
                     std::to_string(y) + ")";
@@ -18,36 +19,42 @@ namespace go_logic {
         int local_liberty = 0;
         std::stack<std::pair<int, int>> cord_stack;
         cord_stack.emplace(x, y);
-        std::string unvisited = std::string(BOARD_LENGTH * BOARD_LENGTH, '1');
-        unvisited[grid_to_list(x, y)] = '0';
+        std::vector<std::vector<bool>> unvisited(BOARD_LENGTH,
+                                                 std::vector<bool>(BOARD_LENGTH,
+                                                                   true));
+        unvisited[x][y] = false;
 
         while (!cord_stack.empty()) {
             std::pair<int, int> cur_cord = cord_stack.top();
-            int cur_ind = grid_to_list(cur_cord.first, cur_cord.second);
+            int cur_x = cur_cord.first;
+            int cur_y = cur_cord.second;
             cord_stack.pop();
             for (auto& dir: SEARCH_DIRECTIONS) {
                 int next_x = cur_cord.first + dir[0];
                 int next_y = cur_cord.second + dir[1];
+
                 if (!is_valid_cord(next_x, next_y)) {
                     continue;
                 }
+                if (!unvisited[next_x][next_y]) {
+                    continue;
+                }
 
-                int next_ind = grid_to_list(next_x, next_y);
-                if (unvisited[next_ind] == '0') {
-                    continue;
-                }
-                if (cur_board[next_ind] == status_to_char_dict.at(OccupyStatus::Free)) {
+                if (!is_occupied_by_stone(next_x, next_y)) {
                     ++local_liberty;
-                    unvisited[next_ind] = '0';
+                    unvisited[next_x][next_y] = false;
                     continue;
                 }
-                if (cur_board[next_ind] != cur_board[cur_ind]) {
+                if (cur_board[next_x][next_y] != cur_board[cur_x][cur_y]) {
                     continue;
                 }
-                unvisited[next_ind] = '0';
+                unvisited[next_x][next_y] = false;
                 cord_stack.emplace(next_x, next_y);
             }
         }
+
+        std::cout << "Local liberty of (" << x << ", " << y << "): " << local_liberty << std::endl;
+
         return local_liberty;
     }
 
@@ -65,21 +72,19 @@ namespace go_logic {
 
         std::stack<std::pair<int, int>> cord_stack;
         cord_stack.emplace(x, y);
-        auto cur_stone = board_info[grid_to_list(x, y)];
+        auto cur_stone = board_info[x][y];
 
         while (!cord_stack.empty()) {
             std::pair<int, int> cur_cord = cord_stack.top();
-            int cur_ind = grid_to_list(cur_cord.first, cur_cord.second);
             cord_stack.pop();
-            board_info[cur_ind] = status_to_char_dict.at(OccupyStatus::Free);
+            board_info[cur_cord.first][cur_cord.second] = FREE;
             for (auto& dir: SEARCH_DIRECTIONS) {
                 int next_x = cur_cord.first + dir[0];
                 int next_y = cur_cord.second + dir[1];
                 if (!is_valid_cord(next_x, next_y)) {
                     continue;
                 }
-                int next_ind = grid_to_list(next_x, next_y);
-                if (board_info[next_ind] == cur_stone) {
+                if (board_info[next_x][next_y] == cur_stone) {
                     cord_stack.emplace(next_x, next_y);
                 }
             }
@@ -87,4 +92,42 @@ namespace go_logic {
     }
 
 
+
+    void GoLogic::set_stone(int x, int y) {
+        if (!is_valid_cord(x, y)) {
+            std::string err_msg = "Invalid cord: (" + std::to_string(x) + ", " +
+                                  std::to_string(y) + ")";
+            throw std::invalid_argument(err_msg);
+        }
+        if (is_occupied_by_stone(x, y)) {
+            return;
+        }
+
+        auto friendly_color = is_black_turn ? BLACK: WHITE;
+        auto enemy_color = is_black_turn? WHITE: BLACK;
+
+        board_info[x][y] = friendly_color;
+
+        for (auto& dir: SEARCH_DIRECTIONS) {
+            int next_x = x + dir[0];
+            int next_y = y + dir[1];
+            if (!is_valid_cord(next_x, next_y)) {
+                continue;
+            }
+            if (board_info[next_x][next_y] == enemy_color) {
+                int surrounding_enemy_liberty = get_local_liberty(next_x, next_y, board_info);
+                if (surrounding_enemy_liberty == 0) {
+                    remove_stones(next_x, next_y);
+                }
+            }
+        }
+
+        int local_liberty = get_local_liberty(x, y, board_info);
+        if (local_liberty == 0) {
+            board_info[x][y] = FREE;
+            return;
+        }
+
+        is_black_turn = !is_black_turn;
+    }
 }
