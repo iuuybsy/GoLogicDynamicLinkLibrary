@@ -53,8 +53,6 @@ namespace go_logic {
             }
         }
 
-        std::cout << "Local liberty of (" << x << ", " << y << "): " << local_liberty << std::endl;
-
         return local_liberty;
     }
 
@@ -91,8 +89,6 @@ namespace go_logic {
         }
     }
 
-
-
     void GoLogic::set_stone(int x, int y) {
         if (!is_valid_cord(x, y)) {
             std::string err_msg = "Invalid cord: (" + std::to_string(x) + ", " +
@@ -100,6 +96,7 @@ namespace go_logic {
             throw std::invalid_argument(err_msg);
         }
         if (is_occupied_by_stone(x, y)) {
+            is_last_move_valid = false;
             return;
         }
 
@@ -125,7 +122,14 @@ namespace go_logic {
         int local_liberty = get_local_liberty(x, y, board_info);
         if (local_liberty == 0) {
             board_info[x][y] = FREE;
+            is_last_move_valid = false;
             return;
+        }
+
+        std::string cur_bord_info = record_current_board();
+        if (record.size() >= 2 && cur_bord_info == record[record.size() - 2].get_board()) {
+            reset_to_last_move();
+            is_last_move_valid = false;
         }
 
         is_black_turn = !is_black_turn;
